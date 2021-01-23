@@ -2,7 +2,7 @@ package com.developer.app.ui.model.response;
 
 import org.springframework.hateoas.RepresentationModel;
 
-public class AddressResponseModel {
+public class AddressResponseModel extends RepresentationModel<AddressResponseModel>{
 
 	private String addressId;
 	private String street;

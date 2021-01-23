@@ -9,6 +9,7 @@ import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
@@ -37,7 +38,7 @@ import com.developer.app.ui.model.response.OperationStatusModel;
 import com.developer.app.ui.model.response.UserDetailsResponseModel;
 
 @RestController
-@RequestMapping("users")
+@RequestMapping("/users")
 public class UserController {
 
 	@Autowired
@@ -117,7 +118,7 @@ public class UserController {
 
 	@GetMapping(path = "/{userId}/addresses", produces = { MediaType.APPLICATION_XML_VALUE,
 			MediaType.APPLICATION_JSON_VALUE })
-	public List<AddressResponseModel> getListOfAddressesByUserId(@PathVariable String userId) {
+	public CollectionModel<AddressResponseModel> getListOfAddressesByUserId(@PathVariable String userId) {
 
 		List<AddressResponseModel> response = new ArrayList<AddressResponseModel>();
 		List<AddressDto> addressDto = addressService.getAddresses(userId);
@@ -127,9 +128,22 @@ public class UserController {
 			Type listType = new TypeToken<List<AddressResponseModel>>() {
 			}.getType();
 			response = new ModelMapper().map(addressDto, listType);
+			
+			for (AddressResponseModel address: response) {
+				Link selfLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(UserController.class)
+						.getAddressByAddressId(userId, address.getAddressId())).withSelfRel();
+				
+				address.add(selfLink);
+			}
 		}
 
-		return response;
+		Link selfLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(UserController.class)
+				.getListOfAddressesByUserId(userId))
+				.withSelfRel();
+		Link userLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(UserController.class)
+				.getUser(userId))
+				.withRel("user");
+		return CollectionModel.of(response, selfLink, userLink);
 	}
 
 	@GetMapping(path = "/{userId}/addresses/{addressId}", produces = { MediaType.APPLICATION_XML_VALUE,
