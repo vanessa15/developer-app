@@ -2,12 +2,16 @@ package com.developer.app.ui.controller;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,7 +42,7 @@ public class UserController {
 
 	@Autowired
 	UserService userService;
-	
+
 	@Autowired
 	AddressService addressService;
 
@@ -110,33 +114,45 @@ public class UserController {
 
 		return response;
 	}
-	
-	@GetMapping(path = "/{userId}/addresses", produces = { MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE })
+
+	@GetMapping(path = "/{userId}/addresses", produces = { MediaType.APPLICATION_XML_VALUE,
+			MediaType.APPLICATION_JSON_VALUE })
 	public List<AddressResponseModel> getListOfAddressesByUserId(@PathVariable String userId) {
 
 		List<AddressResponseModel> response = new ArrayList<AddressResponseModel>();
 		List<AddressDto> addressDto = addressService.getAddresses(userId);
-		
+
 		if (addressDto != null && !addressDto.isEmpty()) {
-			
-			Type listType = new TypeToken<List<AddressResponseModel>>() {}.getType();
+
+			Type listType = new TypeToken<List<AddressResponseModel>>() {
+			}.getType();
 			response = new ModelMapper().map(addressDto, listType);
 		}
 
 		return response;
 	}
-	
-	@GetMapping(path = "/{userId}/addresses/{addressId}", produces = { MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_JSON_VALUE })
-	public AddressResponseModel getAddressByAddressId(@PathVariable String addressId) {
+
+	@GetMapping(path = "/{userId}/addresses/{addressId}", produces = { MediaType.APPLICATION_XML_VALUE,
+			MediaType.APPLICATION_JSON_VALUE })
+	public EntityModel<AddressResponseModel> getAddressByAddressId(@PathVariable String userId,
+			@PathVariable String addressId) {
 
 		AddressResponseModel response = new AddressResponseModel();
 		AddressDto addressDto = addressService.getAddress(addressId);
-		
-		if (addressDto != null) {
-			response = new ModelMapper().map(addressDto, AddressResponseModel.class);
-		}
 
-		return response;
+		response = new ModelMapper().map(addressDto, AddressResponseModel.class);
+
+		Link selfLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(UserController.class)
+				.getAddressByAddressId(userId, addressId)).withSelfRel();
+		Link addressesLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(UserController.class)
+				.getListOfAddressesByUserId(userId))
+				.withRel("addresses");
+		Link userLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(UserController.class)
+				.getUser(userId))
+				.withRel("user");
+
+		return EntityModel.of(response, Arrays.asList(selfLink, addressesLink, userLink));
+		
 	}
 
 }

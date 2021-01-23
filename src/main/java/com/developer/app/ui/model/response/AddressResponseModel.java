@@ -1,5 +1,7 @@
 package com.developer.app.ui.model.response;
 
+import org.springframework.hateoas.RepresentationModel;
+
 public class AddressResponseModel {
 
 	private String addressId;
