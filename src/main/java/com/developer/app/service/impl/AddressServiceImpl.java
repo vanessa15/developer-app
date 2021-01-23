@@ -37,7 +37,6 @@ public class AddressServiceImpl implements AddressService {
 		for (AddressEntity address : addresses) {
 			returnValue.add(modelMapper.map(address, AddressDto.class));
 		}
-		//sdda
 
 		return returnValue;
 	}
